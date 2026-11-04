@@ -411,7 +411,8 @@ h1 b{color:var(--ink);font-weight:700}
   // ---------- sounds ----------
   // Loudness: voices -> drive gain -> tanh soft clipper -> output. More drive = louder without harsh clipping.
   const DRIVE = { 1: 1.0, 2: 2.2, 3: 4.0 };
-  let bus = null;
+  let bus = null, ignoreUntil = 0;
+  const ignoreFor = ms => { ignoreUntil = Math.max(ignoreUntil, performance.now() + ms); };
   function getBus(){
     if (bus) return bus;
     bus = ctx.createGain(); bus.gain.value = DRIVE[S.vol] || 4;
@@ -424,6 +425,7 @@ h1 b{color:var(--ink);font-weight:700}
   }
   function hoot(){
     if (!S.snd || !ctx || ctx.state !== 'running') return;
+    ignoreFor(2300);
     const b = getBus(), t = ctx.currentTime + 0.02;
     // "Huu – hu-huuu"
     [[0,0.5,600,450],[0.72,0.22,640,560],[1.0,0.8,620,430]].forEach(([d,len,f0,f1]) => {
@@ -444,6 +446,7 @@ h1 b{color:var(--ink);font-weight:700}
   }
   function chime(){
     if (!S.snd || !ctx || ctx.state !== 'running') return;
+    ignoreFor(1300);
     const t = ctx.currentTime + 0.02;
     [880, 1175, 1568].forEach((f,i) => {
       const o = ctx.createOscillator(), g = ctx.createGain(); o.type='sine'; o.frequency.value=f;
@@ -456,7 +459,7 @@ h1 b{color:var(--ink);font-weight:700}
   let mode = 'idle'; // idle | live | paused | off
   let pFast = 0, level = NaN, lmax = -Infinity, eSum = 0, eT = 0, last = performance.now();
   let overSince = null, alarm = null, lastAlarmEnd = -1e9, awakeUntil = 0, hootTimer = null;
-  let owlState = 'idle', stars = 0, quietAcc = 0, act = '', lastAct = '';
+  let wasIgnoring = false, owlState = 'idle', stars = 0, quietAcc = 0, act = '', lastAct = '';
   const ACTS = ['jump','fall','spin','puff','fly','dizzy'];
   const running = () => mode === 'live';
 
@@ -607,6 +610,13 @@ h1 b{color:var(--ink);font-weight:700}
     const dt = Math.min(0.25, (t - last)/1000); last = t;
     if (running()) {
       let inst;
+      if (t < ignoreUntil) {
+        // own sound is playing: hold the reading so the owl doesn't hear herself
+        wasIgnoring = true;
+        if (!alarm && owlState !== 'awake') { quietAcc += dt; }
+        requestAnimationFrame(loop); return;
+      }
+      if (wasIgnoring) { wasIgnoring = false; overSince = null; if (isFinite(level)) pFast = Math.pow(10, (Math.min(level, S.thr - 3) - BASE_CAL - S.cal)/10); }
       if (mode === 'live' && analyser) {
         const ms = meanSquare();
         pFast += (ms - pFast) * (1 - Math.exp(-dt/0.125));

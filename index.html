@@ -311,8 +311,10 @@ h1 b{color:var(--ink);font-weight:700}
       <input class="sw" type="checkbox" id="snd" checked>
     </div>
     <div class="row">
-      <label for="vol">Lautstärke Eulenruf<small>Handy-Lautstärke ebenfalls hochdrehen</small></label>
-      <select id="vol"><option value="1">normal</option><option value="2">laut</option><option value="3">sehr laut</option></select>
+      <label for="vol">Lautstärke Eulenruf<small>Wirkt zusätzlich zur Handy-Lautstärke</small></label>
+      <span class="val" id="volVal">100 %</span>
+      <input type="range" id="vol" min="5" max="100" step="5" value="100">
+      <button class="btn" id="volTest" type="button" style="grid-column:1/-1">Eulenruf anhören</button>
     </div>
     <div class="row">
       <label for="vib">Vibration<small id="vibHint">Nur auf Geräten, die es erlauben</small></label>
@@ -354,11 +356,12 @@ h1 b{color:var(--ink);font-weight:700}
   const pct = v => Math.max(0, Math.min(100, (v - MIN) / (MAX - MIN) * 100));
 
   // ---------- settings ----------
-  const S = { thr:70, hold:1, snd:true, vib:true, aw:true, cal:0, starMin:2, vol:3 };
+  const S = { thr:70, hold:1, snd:true, vib:true, aw:true, cal:0, starMin:2, vol:100 };
   try { Object.assign(S, JSON.parse(localStorage.getItem('pssst-eule') || '{}')); } catch(e){}
+  if (S.vol <= 3) S.vol = { 1:40, 2:70, 3:100 }[S.vol] || 100; // older 3-step setting
   const save = () => { try { localStorage.setItem('pssst-eule', JSON.stringify(S)); } catch(e){} };
   $('thr').value = S.thr; $('hold').value = String(S.hold); $('snd').checked = S.snd; $('vib').checked = S.vib;
-  $('aw').checked = S.aw; $('cal').value = S.cal; $('starMin').value = String(S.starMin); $('vol').value = String(S.vol);
+  $('aw').checked = S.aw; $('cal').value = S.cal; $('starMin').value = String(S.starMin); $('vol').value = String(S.vol); $('volVal').textContent = S.vol + ' %';
   const canVibrate = 'vibrate' in navigator;
   if (!canVibrate) { $('vib').checked = false; $('vib').disabled = true; $('vibHint').textContent = 'Auf diesem Gerät nicht verfügbar (z. B. iPhone)'; }
   function syncLabels(){
@@ -374,7 +377,9 @@ h1 b{color:var(--ink);font-weight:700}
   $('hold').addEventListener('change', e => { S.hold = +e.target.value; save(); });
   $('snd').addEventListener('change', e => { S.snd = e.target.checked; save(); });
   $('vib').addEventListener('change', e => { S.vib = e.target.checked; save(); });
-  $('vol').addEventListener('change', e => { S.vol = +e.target.value; save(); if (bus) bus.gain.value = DRIVE[S.vol]; hoot(); });
+  $('vol').addEventListener('input', e => { S.vol = +e.target.value; $('volVal').textContent = S.vol + ' %'; applyVol(); save(); });
+  $('vol').addEventListener('change', async () => { await getCtx(); hoot(true); });
+  $('volTest').addEventListener('click', async () => { await getCtx(); hoot(true); });
   $('starMin').addEventListener('change', e => { S.starMin = +e.target.value; save(); });
   $('aw').addEventListener('change', e => { S.aw = e.target.checked; syncLabels(); save(); if (src) wire(); });
   $('cal').addEventListener('input', e => { S.cal = +e.target.value; syncLabels(); save(); });
@@ -410,21 +415,28 @@ h1 b{color:var(--ink);font-weight:700}
 
   // ---------- sounds ----------
   // Loudness: voices -> drive gain -> tanh soft clipper -> output. More drive = louder without harsh clipping.
-  const DRIVE = { 1: 1.0, 2: 2.2, 3: 4.0 };
-  let bus = null, ignoreUntil = 0;
+  let bus = null, busOut = null, ignoreUntil = 0;
+  // 5–50 %: plain volume; 50–100 %: same peak level but more drive into the soft clipper = louder
+  function applyVol(){
+    if (!bus) return;
+    const v = S.vol/100;
+    bus.gain.value = v <= 0.5 ? 1 : 1 + (v-0.5)/0.5*3.5;
+    busOut.gain.value = v <= 0.5 ? (v/0.5)*0.98 : 0.98;
+  }
   const ignoreFor = ms => { ignoreUntil = Math.max(ignoreUntil, performance.now() + ms); };
   function getBus(){
     if (bus) return bus;
-    bus = ctx.createGain(); bus.gain.value = DRIVE[S.vol] || 4;
+    bus = ctx.createGain();
     const sh = ctx.createWaveShaper(), n = 2048, curve = new Float32Array(n);
     for (let i=0;i<n;i++){ const x = i/(n-1)*2-1; curve[i] = Math.tanh(x*1.6)/Math.tanh(1.6); }
     sh.curve = curve; sh.oversample = '4x';
-    const out = ctx.createGain(); out.gain.value = 0.98;
-    bus.connect(sh); sh.connect(out); out.connect(ctx.destination);
+    busOut = ctx.createGain();
+    bus.connect(sh); sh.connect(busOut); busOut.connect(ctx.destination);
+    applyVol();
     return bus;
   }
-  function hoot(){
-    if (!S.snd || !ctx || ctx.state !== 'running') return;
+  function hoot(force){
+    if ((!S.snd && !force) || !ctx || ctx.state !== 'running') return;
     ignoreFor(2300);
     const b = getBus(), t = ctx.currentTime + 0.02;
     // "Huu – hu-huuu"

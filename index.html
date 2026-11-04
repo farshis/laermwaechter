@@ -87,9 +87,31 @@ h1 b{color:var(--ink);font-weight:700}
   .twinkle{animation:tw 2.6s ease-in-out infinite}
   .twinkle:nth-of-type(2n){animation-delay:1.3s}
   @keyframes tw{50%{opacity:.25}}
-  .st-awake .owl{animation:shake .25s linear infinite;transform-box:fill-box;transform-origin:50% 100%}
-  @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+  .owl{transform-box:fill-box;transform-origin:50% 100%}
+  .act-jump .owl{animation:jump .62s cubic-bezier(.3,.7,.4,1) infinite}
+  @keyframes jump{0%,100%{transform:translateY(0) scale(1.08,.92)}15%{transform:translateY(0) scale(.94,1.08)}50%{transform:translateY(-78px) scale(1,1)}85%{transform:translateY(0) scale(1.06,.94)}}
+  .act-fall .owl{animation:fall 7s ease-in-out both}
+  @keyframes fall{0%{transform:none}6%{transform:translate(6px,-14px) rotate(-8deg)}16%{transform:translate(30px,330px) rotate(70deg)}42%{transform:translate(30px,330px) rotate(70deg)}
+    52%{transform:translate(0,120px) rotate(-6deg)}58%{transform:translate(0,140px) rotate(6deg)}66%{transform:translate(0,60px) rotate(-6deg)}72%{transform:translate(0,76px) rotate(6deg)}82%{transform:translate(0,-10px)}90%,100%{transform:none}}
+  .act-spin .owl{animation:spin 1.1s cubic-bezier(.5,0,.5,1) infinite;transform-origin:50% 55%}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .act-puff .owl{animation:puff 1.4s cubic-bezier(.3,1.6,.5,1) infinite}
+  @keyframes puff{0%,100%{transform:scale(1)}35%{transform:scale(1.28,1.22)}60%{transform:scale(1.18)}}
+  .act-puff .feathers{display:inline}
+  .feathers ellipse{animation:feather 1.6s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+  @keyframes feather{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(260deg)}}
+  .act-fly .owl{animation:fly 3.2s ease-in-out infinite}
+  @keyframes fly{0%,100%{transform:none}20%{transform:translate(-40px,-90px) rotate(-10deg)}45%{transform:translate(50px,-130px) rotate(12deg)}70%{transform:translate(-30px,-60px) rotate(-8deg)}}
+  .act-fly .wing.l{animation-duration:.14s} .act-fly .wing.r{animation-duration:.14s}
+  .act-dizzy .owl{animation:wobble 1.3s ease-in-out infinite}
+  @keyframes wobble{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(11deg)}}
+  .act-dizzy .eyes-dizzy .sp{animation:spinEye 1s linear infinite;transform-box:fill-box;transform-origin:50% 50%}
+  @keyframes spinEye{to{transform:rotate(360deg)}}
+  .act-dizzy .halo{display:inline;animation:halo 2.2s linear infinite;transform-box:view-box;transform-origin:160px 44px}
+  @keyframes halo{to{transform:rotate(360deg)}}
 }
+.feathers,.halo,.eyes-dizzy{display:none}
+.act-dizzy .eyes-open{display:none!important} .act-dizzy .eyes-dizzy{display:inline}
 
 /* panel */
 .panel{display:grid;gap:14px;min-width:0;text-align:center}
@@ -208,10 +230,28 @@ h1 b{color:var(--ink);font-weight:700}
             <circle cx="128" cy="138" r="13" fill="var(--eye)"/><circle cx="192" cy="138" r="13" fill="var(--eye)"/>
             <circle cx="133" cy="132" r="4.5" fill="#fff"/><circle cx="197" cy="132" r="4.5" fill="#fff"/>
           </g>
+          <g class="eyes-dizzy" fill="none" stroke="var(--eye)" stroke-width="5" stroke-linecap="round">
+            <circle cx="128" cy="138" r="29" fill="#fff" stroke="none"/><circle cx="192" cy="138" r="29" fill="#fff" stroke="none"/>
+            <path class="sp" d="M128 138 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -14 0 a13 13 0 1 1 24 0 a18 18 0 1 1 -32 0"/>
+            <path class="sp" d="M192 138 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -14 0 a13 13 0 1 1 24 0 a18 18 0 1 1 -32 0"/>
+          </g>
           <polygon points="150,160 170,160 160,182" fill="var(--beak)"/>
           <ellipse cx="136" cy="276" rx="14" ry="7" fill="var(--beak)"/>
           <ellipse cx="184" cy="276" rx="14" ry="7" fill="var(--beak)"/>
         </g>
+      </g>
+      <g class="halo" fill="var(--moon)">
+        <path d="M96 40 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z"/>
+        <path d="M220 40 l3 6 7 1 -5 5 1 7 -6 -4 -6 4 1 -7 -5 -5 7 -1z"/>
+        <path d="M160 -2 l3 6 7 1 -5 5 1 7 -6 -4 -6 4 1 -7 -5 -5 7 -1z"/>
+      </g>
+      <g class="feathers" fill="var(--belly)">
+        <ellipse cx="96" cy="170" rx="9" ry="4" style="--dx:-70px;--dy:-40px"/>
+        <ellipse cx="224" cy="170" rx="9" ry="4" style="--dx:70px;--dy:-50px;animation-delay:.2s"/>
+        <ellipse cx="110" cy="230" rx="8" ry="4" style="--dx:-80px;--dy:30px;animation-delay:.5s"/>
+        <ellipse cx="210" cy="232" rx="8" ry="4" style="--dx:80px;--dy:24px;animation-delay:.35s"/>
+        <ellipse cx="140" cy="96" rx="8" ry="4" style="--dx:-30px;--dy:-70px;animation-delay:.7s"/>
+        <ellipse cx="182" cy="96" rx="8" ry="4" style="--dx:36px;--dy:-74px;animation-delay:.9s"/>
       </g>
       <g class="zzz" fill="var(--ink)" font-family="Fredoka, sans-serif" font-weight="700">
         <text x="226" y="112" font-size="22">z</text><text x="238" y="94" font-size="28">z</text><text x="252" y="72" font-size="34">Z</text>
@@ -271,6 +311,10 @@ h1 b{color:var(--ink);font-weight:700}
       <input class="sw" type="checkbox" id="snd" checked>
     </div>
     <div class="row">
+      <label for="vol">Lautstärke Eulenruf<small>Handy-Lautstärke ebenfalls hochdrehen</small></label>
+      <select id="vol"><option value="1">normal</option><option value="2">laut</option><option value="3">sehr laut</option></select>
+    </div>
+    <div class="row">
       <label for="vib">Vibration<small id="vibHint">Nur auf Geräten, die es erlauben</small></label>
       <input class="sw" type="checkbox" id="vib" checked>
     </div>
@@ -291,7 +335,6 @@ h1 b{color:var(--ink);font-weight:700}
     </div>
     <div class="btns">
       <button class="btn primary" id="toggleRun" type="button">Messung starten</button>
-      <button class="btn" id="demo" type="button">Demo ansehen</button>
       <button class="btn" id="resetStars" type="button">Sterne auf 0</button>
     </div>
 
@@ -311,11 +354,11 @@ h1 b{color:var(--ink);font-weight:700}
   const pct = v => Math.max(0, Math.min(100, (v - MIN) / (MAX - MIN) * 100));
 
   // ---------- settings ----------
-  const S = { thr:70, hold:1, snd:true, vib:true, aw:true, cal:0, starMin:2 };
+  const S = { thr:70, hold:1, snd:true, vib:true, aw:true, cal:0, starMin:2, vol:3 };
   try { Object.assign(S, JSON.parse(localStorage.getItem('pssst-eule') || '{}')); } catch(e){}
   const save = () => { try { localStorage.setItem('pssst-eule', JSON.stringify(S)); } catch(e){} };
   $('thr').value = S.thr; $('hold').value = String(S.hold); $('snd').checked = S.snd; $('vib').checked = S.vib;
-  $('aw').checked = S.aw; $('cal').value = S.cal; $('starMin').value = String(S.starMin);
+  $('aw').checked = S.aw; $('cal').value = S.cal; $('starMin').value = String(S.starMin); $('vol').value = String(S.vol);
   const canVibrate = 'vibrate' in navigator;
   if (!canVibrate) { $('vib').checked = false; $('vib').disabled = true; $('vibHint').textContent = 'Auf diesem Gerät nicht verfügbar (z. B. iPhone)'; }
   function syncLabels(){
@@ -331,6 +374,7 @@ h1 b{color:var(--ink);font-weight:700}
   $('hold').addEventListener('change', e => { S.hold = +e.target.value; save(); });
   $('snd').addEventListener('change', e => { S.snd = e.target.checked; save(); });
   $('vib').addEventListener('change', e => { S.vib = e.target.checked; save(); });
+  $('vol').addEventListener('change', e => { S.vol = +e.target.value; save(); if (bus) bus.gain.value = DRIVE[S.vol]; hoot(); });
   $('starMin').addEventListener('change', e => { S.starMin = +e.target.value; save(); });
   $('aw').addEventListener('change', e => { S.aw = e.target.checked; syncLabels(); save(); if (src) wire(); });
   $('cal').addEventListener('input', e => { S.cal = +e.target.value; syncLabels(); save(); });
@@ -365,18 +409,37 @@ h1 b{color:var(--ink);font-weight:700}
   }
 
   // ---------- sounds ----------
+  // Loudness: voices -> drive gain -> tanh soft clipper -> output. More drive = louder without harsh clipping.
+  const DRIVE = { 1: 1.0, 2: 2.2, 3: 4.0 };
+  let bus = null;
+  function getBus(){
+    if (bus) return bus;
+    bus = ctx.createGain(); bus.gain.value = DRIVE[S.vol] || 4;
+    const sh = ctx.createWaveShaper(), n = 2048, curve = new Float32Array(n);
+    for (let i=0;i<n;i++){ const x = i/(n-1)*2-1; curve[i] = Math.tanh(x*1.6)/Math.tanh(1.6); }
+    sh.curve = curve; sh.oversample = '4x';
+    const out = ctx.createGain(); out.gain.value = 0.98;
+    bus.connect(sh); sh.connect(out); out.connect(ctx.destination);
+    return bus;
+  }
   function hoot(){
     if (!S.snd || !ctx || ctx.state !== 'running') return;
-    const t = ctx.currentTime + 0.02;
-    [[0,0.45],[0.6,0.7]].forEach(([d,len]) => {
-      const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), g2 = ctx.createGain();
-      o.type = 'sine'; o2.type = 'triangle';
-      o.frequency.setValueAtTime(560, t+d); o.frequency.exponentialRampToValueAtTime(410, t+d+len);
-      o2.frequency.setValueAtTime(1120, t+d); o2.frequency.exponentialRampToValueAtTime(820, t+d+len);
-      g.gain.setValueAtTime(0.0001, t+d); g.gain.exponentialRampToValueAtTime(0.6, t+d+0.06); g.gain.exponentialRampToValueAtTime(0.0001, t+d+len);
-      g2.gain.value = 0.12;
-      o.connect(g); o2.connect(g2); g2.connect(g); g.connect(ctx.destination);
-      o.start(t+d); o2.start(t+d); o.stop(t+d+len+0.05); o2.stop(t+d+len+0.05);
+    const b = getBus(), t = ctx.currentTime + 0.02;
+    // "Huu – hu-huuu"
+    [[0,0.5,600,450],[0.72,0.22,640,560],[1.0,0.8,620,430]].forEach(([d,len,f0,f1]) => {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t+d); g.gain.exponentialRampToValueAtTime(0.5, t+d+0.05);
+      g.gain.setValueAtTime(0.5, t+d+len*0.6); g.gain.exponentialRampToValueAtTime(0.0001, t+d+len);
+      g.connect(b);
+      [['sine',1,1],['triangle',2,0.45],['sine',3,0.2]].forEach(([type,mul,amp]) => {
+        const o = ctx.createOscillator(), og = ctx.createGain();
+        o.type = type; og.gain.value = amp;
+        o.frequency.setValueAtTime(f0*mul, t+d); o.frequency.exponentialRampToValueAtTime(f1*mul, t+d+len);
+        const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 7; vg.gain.value = 9*mul;
+        vib.connect(vg); vg.connect(o.frequency);
+        o.connect(og); og.connect(g);
+        o.start(t+d); vib.start(t+d); o.stop(t+d+len+0.05); vib.stop(t+d+len+0.05);
+      });
     });
   }
   function chime(){
@@ -384,17 +447,18 @@ h1 b{color:var(--ink);font-weight:700}
     const t = ctx.currentTime + 0.02;
     [880, 1175, 1568].forEach((f,i) => {
       const o = ctx.createOscillator(), g = ctx.createGain(); o.type='sine'; o.frequency.value=f;
-      g.gain.setValueAtTime(0.0001, t+i*0.12); g.gain.exponentialRampToValueAtTime(0.25, t+i*0.12+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+i*0.12+0.5);
-      o.connect(g); g.connect(ctx.destination); o.start(t+i*0.12); o.stop(t+i*0.12+0.55);
+      g.gain.setValueAtTime(0.0001, t+i*0.12); g.gain.exponentialRampToValueAtTime(0.12, t+i*0.12+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+i*0.12+0.5);
+      o.connect(g); g.connect(getBus()); o.start(t+i*0.12); o.stop(t+i*0.12+0.55);
     });
   }
 
   // ---------- state ----------
-  let mode = 'idle'; // idle | live | demo | paused | off
+  let mode = 'idle'; // idle | live | paused | off
   let pFast = 0, level = NaN, lmax = -Infinity, eSum = 0, eT = 0, last = performance.now();
   let overSince = null, alarm = null, lastAlarmEnd = -1e9, awakeUntil = 0, hootTimer = null;
-  let owlState = 'idle', stars = 0, quietAcc = 0, demoT0 = 0;
-  const running = () => mode === 'live' || mode === 'demo';
+  let owlState = 'idle', stars = 0, quietAcc = 0, act = '', lastAct = '';
+  const ACTS = ['jump','fall','spin','puff','fly','dizzy'];
+  const running = () => mode === 'live';
 
   function resetStats(){ pFast = 0; lmax = -Infinity; eSum = 0; eT = 0; overSince = null; }
 
@@ -418,7 +482,7 @@ h1 b{color:var(--ink);font-weight:700}
       showErr(n === 'NotAllowedError' || n === 'SecurityError'
         ? 'Die Eule kann nichts hören: Der Mikrofonzugriff wurde nicht erlaubt. Bitte in den Browser-Einstellungen für diese Seite das Mikrofon erlauben und neu laden.'
         : n === 'NotFoundError' ? 'Es wurde kein Mikrofon gefunden.'
-        : 'Dieser Browser kann hier nicht aufs Mikrofon zugreifen. Öffne die Seite in Safari oder Chrome. In den Eltern-Einstellungen gibt es eine Demo.');
+        : 'Dieser Browser kann hier nicht aufs Mikrofon zugreifen. Öffne die Seite in Safari oder Chrome.');
     }
   }
   function stopAll(){
@@ -427,35 +491,19 @@ h1 b{color:var(--ink);font-weight:700}
     stream = null; src = null;
     try { wakeLock && wakeLock.release(); } catch(e){} wakeLock = null;
     if (alarm) endAlarm(performance.now());
-    awakeUntil = 0;
+    awakeUntil = 0; act = '';
     mode = 'off'; updateUI();
   }
-  async function startDemo(){
-    if (mode === 'live') stopAll();
-    await getCtx(); resetStats(); mode = 'demo'; demoT0 = performance.now(); last = demoT0; $('err').hidden = true;
-    closeSheet(); updateUI();
-  }
-  function demoLevel(t){
-    const s = ((t - demoT0)/1000) % 26, T = S.thr;
-    const base = T - 22 + Math.sin(t/900)*2;
-    if (s < 6) return base;
-    if (s < 10) return base + (s-6)/4 * 16;           // getting louder (peek)
-    if (s < 15) return T + 7 + Math.sin(t/120)*2;      // too loud
-    if (s < 18) return T - 12;
-    return base;
-  }
-
   function showErr(t){ $('err').textContent = t; $('err').hidden = false; }
 
   $('go').addEventListener('click', () => { if (!running()) startLive(); });
   $('toggleRun').addEventListener('click', () => { running() || mode === 'paused' ? stopAll() : (closeSheet(), startLive()); });
-  $('demo').addEventListener('click', startDemo);
   $('resetStars').addEventListener('click', () => { stars = 0; quietAcc = 0; renderStars(); });
 
   let hiddenAt = null;
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden' && running()) {
-      hiddenAt = Date.now(); if (alarm) endAlarm(performance.now()); mode = mode === 'demo' ? 'demo' : 'paused'; wakeLock = null; updateUI();
+      hiddenAt = Date.now(); if (alarm) endAlarm(performance.now()); mode = 'paused'; wakeLock = null; updateUI();
     } else if (document.visibilityState === 'visible') {
       if (ctx) { try { await ctx.resume(); } catch(e){} }
       if (mode === 'paused') {
@@ -468,7 +516,8 @@ h1 b{color:var(--ink);font-weight:700}
   // ---------- alarm ----------
   function fireAlarm(t, L){
     alarm = { start: Date.now(), t0: t, peak: L, muted: false };
-    quietAcc = 0;
+    quietAcc = 0; awakeUntil = t + 10000;
+    const pool = ACTS.filter(a => a !== lastAct); act = lastAct = pool[Math.floor(Math.random()*pool.length)];
     hoot(); clearInterval(hootTimer); hootTimer = setInterval(() => { if (alarm && !alarm.muted) hoot(); }, 2600);
     if (S.vib && canVibrate) { try { navigator.vibrate([250,120,250]); } catch(e){} }
     updateUI();
@@ -477,7 +526,7 @@ h1 b{color:var(--ink);font-weight:700}
     if (!alarm) return;
     clearInterval(hootTimer);
     addLog(new Date(alarm.start).toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit', second:'2-digit' }), alarm.peak, (t - alarm.t0)/1000);
-    alarm = null; lastAlarmEnd = t; overSince = null; awakeUntil = t + 1800;
+    alarm = null; lastAlarmEnd = t; overSince = null; awakeUntil = Math.max(awakeUntil, t + 2500);
     updateUI();
   }
   $('okBtn').addEventListener('click', () => { if (alarm) { alarm.muted = true; clearInterval(hootTimer); updateUI(); } });
@@ -512,14 +561,24 @@ h1 b{color:var(--ink);font-weight:700}
 
   // ---------- UI ----------
   function setOwl(st){
-    if (st === owlState) return; owlState = st;
-    $('owlSvg').setAttribute('class', 'st-' + st);
+    if (st !== 'awake') act = '';
+    const cls = 'st-' + st + (st === 'awake' && act ? ' act-' + act : '');
+    owlState = st;
+    if ($('owlSvg').getAttribute('class') !== cls) $('owlSvg').setAttribute('class', cls);
   }
+  const ACT_TEXT = {
+    jump: 'Zu laut! Die Eule hüpft vor Schreck!',
+    fall: 'Plumps! Die Eule ist vom Ast gefallen!',
+    spin: 'Zu laut! Die Eule dreht sich im Kreis!',
+    puff: 'Zu laut! Die Eule plustert sich auf!',
+    fly:  'Zu laut! Die Eule flattert wild herum!',
+    dizzy:'Zu laut! Der Eule ist ganz schwindelig!',
+  };
   const TEXT = {
     idle:  ['Die Eule ist müde.', 'Tippt auf Start. Wenn es am Tisch ruhig ist, schläft sie ein.'],
     sleep: ['Pssst … die Eule schläft.', 'Spielt schön leise weiter, dann sammelt ihr Sterne.'],
     peek:  ['Huch? Die Eule blinzelt.', 'Ein bisschen leiser, sonst wacht sie auf!'],
-    awake: ['Zu laut! Die Eule ist wach!', 'Alle einmal tief durchatmen. Wenn es leise ist, schläft sie wieder ein.'],
+    awake: ['Zu laut! Die Eule ist wach!', 'Alle einmal tief durchatmen. Wenn es wieder leise ist, schläft sie ein.'],
     paused:['Pause.', 'Die Eule wartet, bis die Seite wieder offen ist.'],
     off:   ['Die Eule macht Pause.', 'Tippt auf Start, wenn ihr weiterspielt.'],
   };
@@ -529,8 +588,12 @@ h1 b{color:var(--ink);font-weight:700}
     if (mode === 'paused') key = 'paused';
     else if (mode === 'off') key = 'off';
     else if (mode === 'idle') key = 'idle';
-    else key = owlState;
-    if (key !== lastMsgKey) { lastMsgKey = key; $('msg').textContent = TEXT[key][0]; $('sub').textContent = TEXT[key][1]; }
+    else key = owlState === 'awake' && act ? 'awake:' + act : owlState;
+    if (key !== lastMsgKey) {
+      lastMsgKey = key;
+      const base = TEXT[key.split(':')[0]];
+      $('msg').textContent = key.startsWith('awake:') ? ACT_TEXT[act] : base[0]; $('sub').textContent = base[1];
+    }
     document.body.classList.toggle('is-alarm', !!alarm);
     $('go').hidden = running() || mode === 'paused';
     $('go').textContent = mode === 'off' ? 'Weiter geht’s!' : 'Los geht’s!';
@@ -549,9 +612,7 @@ h1 b{color:var(--ink);font-weight:700}
         pFast += (ms - pFast) * (1 - Math.exp(-dt/0.125));
         level = 10*Math.log10(Math.max(pFast,1e-12)) + BASE_CAL + S.cal;
         inst = ms * Math.pow(10, (BASE_CAL + S.cal)/10);
-      } else {
-        level = demoLevel(t); inst = Math.pow(10, level/10);
-      }
+      } else { requestAnimationFrame(loop); return; }
       if (eT > 0.3) lmax = Math.max(lmax, level);
       eSum += inst*dt; eT += dt;
       checkAlarm(t, level);
@@ -563,6 +624,7 @@ h1 b{color:var(--ink);font-weight:700}
       else if (owlState === 'peek' && level >= S.thr - 11) st = 'peek';
       else st = 'sleep';
       if (st !== owlState) { setOwl(st); updateUI(); }
+      else if (st === 'awake' && !$('owlSvg').classList.contains('act-' + act)) { setOwl(st); updateUI(); }
 
       // stars
       if (!alarm && st !== 'awake') {

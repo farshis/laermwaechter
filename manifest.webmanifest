@@ -1,7 +1,7 @@
 {
   "name": "Lärmwächter",
   "short_name": "Lärmwächter",
-  "description": "Schallpegelmesser mit Alarm bei Überschreitung einer Schwelle",
+  "description": "Kindgerechter Lärmwächter mit fünf Tieren, die bei Lärm aufwachen",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

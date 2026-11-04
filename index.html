@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1D6D89">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lärmwächter">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Lärmwächter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-column instrument face — readout, scale, history, then controls; widens to two columns on desktop */
+:root{
+  --bg:#EDF0F2; --panel:#FFFFFF; --ink:#13232E; --muted:#5A6A75; --line:#D2D9DF;
+  --level:#1D6D89; --accent:#C98204; --alarm:#C42F29; --ok:#2C7D52;
+  --f-display:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Work Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E161C; --panel:#15212A; --ink:#E5ECF0; --muted:#8C9EA9; --line:#26343E;
+  --level:#4EB2D3; --accent:#F0B232; --alarm:#F0615B; --ok:#58C08A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E161C; --panel:#15212A; --ink:#E5ECF0; --muted:#8C9EA9; --line:#26343E;
+  --level:#4EB2D3; --accent:#F0B232; --alarm:#F0615B; --ok:#58C08A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:14px}
+@media (min-width:860px){.wrap{grid-template-columns:1.15fr .85fr;align-items:start}.span{grid-column:1/-1}}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.9rem;letter-spacing:.01em;margin:0;line-height:1}
+h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin:0 0 10px}
+.pill{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.live{color:var(--ok);border-color:currentColor}
+.pill.alarm{color:var(--alarm);border-color:currentColor}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.col{display:grid;gap:14px;min-width:0}
+
+/* Readout */
+.meter{position:relative}
+.meter.is-alarm{border-color:var(--alarm);box-shadow:0 0 0 3px color-mix(in srgb,var(--alarm) 25%,transparent)}
+.readout{display:flex;align-items:baseline;gap:8px;font-family:var(--f-display);font-variant-numeric:tabular-nums}
+#lvl{font-size:clamp(4.2rem,22vw,7.5rem);font-weight:600;line-height:.9;letter-spacing:-.01em}
+.meter.is-alarm #lvl{color:var(--alarm)}
+.unit{font-size:1.5rem;color:var(--muted);font-weight:500}
+.caption{color:var(--muted);font-size:.85rem;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.stat b{display:block;font-family:var(--f-display);font-size:1.45rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* Scale */
+.scale{margin-top:16px}
+.bar{position:relative;height:16px;border-radius:4px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:visible}
+.fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:4px;background:var(--level);transition:width .08s linear}
+.meter.is-alarm .fill{background:var(--alarm)}
+.thr{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1.5px;background:var(--accent);border-radius:2px}
+.thr::after{content:attr(data-v);position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:.7rem;font-weight:600;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ticks{position:relative;height:30px;margin-top:4px;font-size:.68rem;color:var(--muted)}
+.ticks div{position:absolute;transform:translateX(-50%);text-align:center;line-height:1.15;white-space:nowrap}
+.ticks div::before{content:"";display:block;width:1px;height:5px;background:var(--muted);margin:0 auto 2px;opacity:.6}
+.ticks b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* Alarm banner */
+.banner{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--alarm);color:#fff;border-radius:10px;padding:10px 12px;margin-top:14px;font-weight:600}
+.banner button{background:#fff;color:#7A1612;border:0}
+@media (prefers-reduced-motion:no-preference){.meter.is-alarm{animation:pulse 1s ease-in-out infinite}}
+@keyframes pulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--alarm) 15%,transparent)}}
+
+/* History */
+canvas{display:block;width:100%;height:160px}
+.histhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.histhead small{color:var(--muted);font-size:.75rem}
+
+/* Controls */
+button,.filebtn{font:inherit;font-weight:600;border-radius:10px;padding:11px 16px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,.filebtn:focus-within{outline:3px solid color-mix(in srgb,var(--level) 55%,transparent);outline-offset:2px}
+#start{width:100%;background:var(--level);color:var(--panel);border-color:var(--level);font-size:1.05rem;padding:14px}
+#start.stop{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row label{font-weight:500}
+.row small{display:block;color:var(--muted);font-size:.78rem;font-weight:400}
+.row .val{font-family:var(--f-display);font-size:1.2rem;font-weight:600;font-variant-numeric:tabular-nums;min-width:4.5ch;text-align:right}
+.slider{grid-column:1/-1}
+input[type=range]{width:100%;accent-color:var(--accent)}
+#cal{accent-color:var(--level)}
+select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.switch{width:22px;height:22px;accent-color:var(--level)}
+
+/* Log */
+#log{list-style:none;margin:0;padding:0;display:grid;gap:0}
+#log li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;font-size:.9rem}
+#log li:first-child{border-top:0}
+#log .t{color:var(--muted)}
+#log .p{font-weight:600;color:var(--alarm)}
+.empty{color:var(--muted);font-size:.9rem;margin:0}
+
+/* Notice */
+.notice{border-left:3px solid var(--accent);padding:2px 0 2px 12px;font-size:.88rem}
+.notice p{margin:0 0 8px}
+.filebtn{display:inline-block;position:relative}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fine{color:var(--muted);font-size:.78rem;margin:0;max-width:70ch}
+</style>
+
+<div class="wrap">
+  <header class="span">
+    <h1>Lärmwächter</h1>
+    <span id="status" class="pill">Bereit</span>
+  </header>
+
+  <div class="col">
+    <section class="panel meter" id="meter" aria-live="polite">
+      <div class="readout"><span id="lvl">--.-</span><span class="unit" id="unit">dB(A)</span></div>
+      <div class="caption" id="caption">Tippe auf „Messung starten“ und erlaube den Mikrofonzugriff.</div>
+
+      <div class="scale" aria-hidden="true">
+        <div class="bar"><div class="fill" id="fill"></div><div class="thr" id="thrMark" data-v="70"></div></div>
+        <div class="ticks">
+          <div style="left:10%"><b>30</b><br>Flüstern</div>
+          <div style="left:40%"><b>60</b><br>Gespräch</div>
+          <div style="left:60%"><b>80</b><br>Straße</div>
+          <div style="left:80%"><b>100</b><br>Disco</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="lmax">–</b><span>L<sub>max</sub></span></div>
+        <div class="stat"><b id="leq">–</b><span>L<sub>eq</sub></span></div>
+        <div class="stat"><b id="acount">0</b><span>Alarme</span></div>
+      </div>
+
+      <div class="banner" id="banner" hidden>
+        <span id="bannerText">Schwelle überschritten</span>
+        <button id="ack" type="button">Quittieren</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="histhead"><h2>Verlauf</h2><small id="histspan">letzte 60 s</small></div>
+      <canvas id="hist" aria-label="Pegelverlauf mit Schwellenlinie"></canvas>
+    </section>
+
+    <section class="panel notice" id="fallback" hidden>
+      <p><b>Mikrofon nicht verfügbar.</b> <span id="fbReason">In dieser Ansicht blockiert der Browser den Mikrofonzugriff.</span></p>
+      <p>Erlaube das Mikrofon in den Browser-Einstellungen für diese Seite und lade sie neu. Alternativ kannst du hier eine Aufnahme auswerten.</p>
+      <label class="filebtn">Aufnahme auswerten…<input type="file" id="file" accept="audio/*" capture></label>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="panel">
+      <button id="start" type="button">Messung starten</button>
+      <div style="margin-top:12px">
+        <div class="row">
+          <label for="thr">Alarmschwelle<small>Ab diesem Pegel schlägt die App an</small></label>
+          <span class="val" id="thrVal">70 dB</span>
+          <input class="slider" type="range" id="thr" min="40" max="110" step="1" value="70">
+        </div>
+        <div class="row">
+          <label for="hold">Mindestdauer<small>So lange muss der Pegel drüber liegen</small></label>
+          <select id="hold">
+            <option value="0">sofort</option>
+            <option value="1" selected>1 s</option>
+            <option value="3">3 s</option>
+            <option value="10">10 s</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="snd">Alarmton</label>
+          <input class="switch" type="checkbox" id="snd" checked>
+        </div>
+        <div class="row">
+          <label for="vib">Vibration<small id="vibHint">Nur auf Geräten, die es erlauben</small></label>
+          <input class="switch" type="checkbox" id="vib" checked>
+        </div>
+        <div class="row">
+          <label for="aw">A-Bewertung<small>Gewichtet wie das menschliche Ohr</small></label>
+          <input class="switch" type="checkbox" id="aw" checked>
+        </div>
+        <div class="row">
+          <label for="cal">Kalibrierung<small>Mit Referenz-Messgerät abgleichen</small></label>
+          <span class="val" id="calVal">+0</span>
+          <input class="slider" type="range" id="cal" min="-30" max="30" step="1" value="0">
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Alarmprotokoll</h2>
+      <p class="empty" id="logEmpty">Noch kein Alarm.</p>
+      <ul id="log"></ul>
+    </section>
+
+    <p class="fine">Handy- und Laptop-Mikrofone sind keine geeichten Schallpegelmesser. Ohne Kalibrierung ist eine Abweichung von 5–10 dB üblich. Zeitbewertung „Fast“ (125 ms).</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MIN = 20, MAX = 120, BASE_CAL = 100; // 0 dBFS RMS ≈ 100 dB SPL as starting point
+  const pct = v => Math.max(0, Math.min(100, (v - MIN) / (MAX - MIN) * 100));
+
+  // ---------- settings ----------
+  const S = { thr:70, hold:1, snd:true, vib:true, aw:true, cal:0 };
+  try { Object.assign(S, JSON.parse(localStorage.getItem('laermwaechter') || '{}')); } catch(e){}
+  const save = () => { try { localStorage.setItem('laermwaechter', JSON.stringify(S)); } catch(e){} };
+  $('thr').value = S.thr; $('hold').value = String(S.hold); $('snd').checked = S.snd;
+  $('vib').checked = S.vib; $('aw').checked = S.aw; $('cal').value = S.cal;
+  function syncLabels(){
+    $('thrVal').textContent = S.thr + ' dB';
+    $('thrMark').style.left = pct(S.thr) + '%';
+    $('thrMark').dataset.v = S.thr;
+    $('calVal').textContent = (S.cal > 0 ? '+' : '') + S.cal;
+    $('unit').textContent = S.aw ? 'dB(A)' : 'dB';
+  }
+  syncLabels();
+  if (!('vibrate' in navigator)) { $('vib').checked = false; $('vib').disabled = true; $('vibHint').textContent = 'Auf diesem Gerät nicht verfügbar (z. B. iPhone)'; }
+  $('thr').addEventListener('input', e => { S.thr = +e.target.value; syncLabels(); save(); drawHist(); });
+  $('hold').addEventListener('change', e => { S.hold = +e.target.value; save(); });
+  $('snd').addEventListener('change', e => { S.snd = e.target.checked; save(); });
+  $('vib').addEventListener('change', e => { S.vib = e.target.checked; save(); });
+  $('aw').addEventListener('change', e => { S.aw = e.target.checked; syncLabels(); save(); if (mode === 'live') wire(); });
+  $('cal').addEventListener('input', e => { S.cal = +e.target.value; syncLabels(); save(); });
+
+  // ---------- audio ----------
+  let ctx = null, stream = null, src = null, analyser = null, chain = null, wakeLock = null, tbuf = null;
+  function makeAChain(c){
+    // A-weighting: 4 zeros at 0 Hz, poles 20.6 (x2), 107.7, 737.9, 12194 (x2).
+    // Web Audio biquad Q for high/lowpass is in dB.
+    const hp1 = c.createBiquadFilter(); hp1.type='highpass'; hp1.frequency.value=20.6; hp1.Q.value=20*Math.log10(0.5);
+    const hp2 = c.createBiquadFilter(); hp2.type='highpass'; hp2.frequency.value=Math.sqrt(107.7*737.9);
+    hp2.Q.value = 20*Math.log10(Math.sqrt(107.7*737.9)/(107.7+737.9));
+    const lp = c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=12194; lp.Q.value=20*Math.log10(0.5);
+    const g = c.createGain();
+    const f = new Float32Array([1000]), m = new Float32Array(1), p = new Float32Array(1);
+    let mag = 1; for (const n of [hp1,hp2,lp]) { n.getFrequencyResponse(f,m,p); mag *= m[0]; }
+    g.gain.value = 1/mag; // 0 dB at 1 kHz
+    hp1.connect(hp2); hp2.connect(lp); lp.connect(g);
+    return { input: hp1, output: g };
+  }
+  function wire(){
+    if (!src) return;
+    try { src.disconnect(); } catch(e){}
+    if (chain) { try { chain.output.disconnect(); } catch(e){} }
+    if (S.aw) { chain = makeAChain(ctx); src.connect(chain.input); chain.output.connect(analyser); }
+    else { chain = null; src.connect(analyser); }
+  }
+  function meanSquare(){
+    analyser.getFloatTimeDomainData(tbuf);
+    let s = 0, m = 0; for (let i=0;i<tbuf.length;i++) m += tbuf[i]; m /= tbuf.length;
+    for (let i=0;i<tbuf.length;i++){ const x = tbuf[i]-m; s += x*x; }
+    return s / tbuf.length;
+  }
+
+  async function startLive(){
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('unsupported');
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      await ctx.resume();
+      stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+      src = ctx.createMediaStreamSource(stream);
+      stream.getAudioTracks().forEach(tr => tr.addEventListener('ended', () => {
+        if (mode === 'live' || mode === 'paused') { stopLive(); $('caption').textContent = 'Das System hat das Mikrofon beendet. Tippe erneut auf „Messung starten“.'; }
+      }));
+      analyser = ctx.createAnalyser(); analyser.fftSize = 2048; tbuf = new Float32Array(analyser.fftSize);
+      wire();
+      resetStats(); mode = 'live'; hist = []; histSpan = 60;
+      $('histspan').textContent = 'letzte 60 s';
+      $('start').textContent = 'Messung stoppen'; $('start').classList.add('stop');
+      $('caption').textContent = 'Live über das Mikrofon.';
+      $('fallback').hidden = true;
+      setStatus();
+      try { wakeLock = await navigator.wakeLock?.request('screen'); } catch(e){}
+    } catch(err) {
+      const name = err && err.name;
+      $('fbReason').textContent = name === 'NotAllowedError'
+        ? 'Der Zugriff auf das Mikrofon wurde verweigert oder ist in dieser Ansicht gesperrt.'
+        : name === 'NotFoundError' ? 'Es wurde kein Mikrofon gefunden.'
+        : 'In dieser Ansicht blockiert der Browser den Mikrofonzugriff.';
+      $('fallback').hidden = false;
+      $('caption').textContent = 'Mikrofon nicht verfügbar. Siehe Hinweis unten.';
+    }
+  }
+  function stopLive(){
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    try { src && src.disconnect(); } catch(e){}
+    stream = null; src = null;
+    try { wakeLock && wakeLock.release(); } catch(e){} wakeLock = null;
+    endAlarm(performance.now());
+    mode = 'off';
+    $('start').textContent = 'Messung starten'; $('start').classList.remove('stop');
+    $('caption').textContent = 'Messung gestoppt.';
+    setStatus();
+  }
+  $('start').addEventListener('click', () => (mode === 'live' || mode === 'paused') ? stopLive() : startLive());
+  let hiddenAt = null;
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden' && mode === 'live') {
+      hiddenAt = Date.now(); mode = 'paused'; endAlarm(performance.now()); setStatus();
+      wakeLock = null;
+    } else if (document.visibilityState === 'visible' && mode === 'paused') {
+      try { await ctx.resume(); } catch(e){}
+      try { wakeLock = await navigator.wakeLock?.request('screen'); } catch(e){}
+      const sec = hiddenAt ? Math.round((Date.now() - hiddenAt)/1000) : 0;
+      mode = 'live'; pFast = 0; last = performance.now(); setStatus();
+      $('caption').textContent = `Messung war ${sec} s pausiert (Seite im Hintergrund oder Display aus). Läuft wieder.`;
+    }
+  });
+
+  // ---------- measurement state ----------
+  let mode = 'ready', pFast = 0, level = NaN, lmax = -Infinity, eSum = 0, eT = 0;
+  let hist = [], histSpan = 60, lastPush = 0, last = performance.now();
+  function resetStats(){ pFast = 0; lmax = -Infinity; eSum = 0; eT = 0; }
+
+  // demo: smooth random walk around a calm room
+  let dA = 48, dV = 0;
+  function demoLevel(t){
+    dV += (Math.random()-0.5)*0.6 - (dA-50)*0.01; dV *= 0.9; dA += dV;
+    const bump = Math.max(0, Math.sin(t/2300)) ** 8 * 12;
+    return dA + bump + Math.sin(t/700)*1.5;
+  }
+
+  // ---------- alarm ----------
+  let overSince = null, alarm = null, lastAlarmEnd = -1e9, beepTimer = null, alarms = 0;
+  function beep(){
+    if (!S.snd || !ctx || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
+    [0, 0.28, 0.56].forEach((d, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'square'; o.frequency.value = i % 2 ? 1320 : 990;
+      g.gain.setValueAtTime(0, now+d); g.gain.linearRampToValueAtTime(0.25, now+d+0.01);
+      g.gain.setValueAtTime(0.25, now+d+0.2); g.gain.linearRampToValueAtTime(0, now+d+0.24);
+      o.connect(g); g.connect(ctx.destination); o.start(now+d); o.stop(now+d+0.26);
+    });
+  }
+  function fireAlarm(t, L){
+    alarms++; $('acount').textContent = alarms;
+    alarm = { start: Date.now(), t0: t, peak: L, muted: false };
+    $('meter').classList.add('is-alarm'); $('banner').hidden = false;
+    setStatus();
+    beep(); beepTimer = setInterval(() => { if (alarm && !alarm.muted) beep(); }, 2500);
+    if (S.vib) { try { navigator.vibrate && navigator.vibrate([300,150,300]); } catch(e){} }
+  }
+  function endAlarm(t){
+    if (!alarm) return;
+    clearInterval(beepTimer);
+    addLog(new Date(alarm.start).toLocaleTimeString('de-DE'), alarm.peak, (t - alarm.t0)/1000);
+    alarm = null; lastAlarmEnd = t; overSince = null;
+    $('meter').classList.remove('is-alarm'); $('banner').hidden = true;
+    setStatus();
+  }
+  $('ack').addEventListener('click', () => { if (alarm) { alarm.muted = true; clearInterval(beepTimer); $('banner').hidden = true; } });
+  function checkAlarm(t, L){
+    if (L >= S.thr) {
+      if (overSince === null) overSince = t;
+      if (!alarm && t - overSince >= S.hold*1000 && t - lastAlarmEnd > 2000) fireAlarm(t, L);
+      if (alarm) { alarm.peak = Math.max(alarm.peak, L); $('bannerText').textContent = `Über ${S.thr} dB · Spitze ${alarm.peak.toFixed(1)} dB`; }
+    } else if (L < S.thr - 2) { overSince = null; if (alarm) endAlarm(t); }
+  }
+  function addLog(when, peak, dur){
+    $('logEmpty').hidden = true;
+    const li = document.createElement('li');
+    const a = document.createElement('span'); a.className='t'; a.textContent = when;
+    const b = document.createElement('span'); b.className='p'; b.textContent = peak.toFixed(1) + ' ' + $('unit').textContent;
+    const c = document.createElement('span'); c.className='t'; c.textContent = dur.toFixed(1).replace('.', ',') + ' s';
+    li.append(a,b,c); $('log').prepend(li);
+    while ($('log').children.length > 12) $('log').lastChild.remove();
+  }
+  function setStatus(){
+    const s = $('status');
+    s.className = 'pill' + (alarm ? ' alarm' : mode === 'live' ? ' live' : '');
+    s.textContent = alarm ? 'Alarm' : { ready:'Bereit', demo:'Demo', live:'Live', off:'Aus', file:'Aufnahme', paused:'Pausiert' }[mode];
+  }
+
+  // ---------- render ----------
+  const fmt = v => isFinite(v) ? v.toFixed(1) : '–';
+  function show(L){
+    $('lvl').textContent = isFinite(L) ? L.toFixed(1) : '--.-';
+    $('fill').style.width = pct(L) + '%';
+    $('lmax').textContent = fmt(lmax);
+    $('leq').textContent = eT > 0 ? fmt(10*Math.log10(eSum/eT)) : '–';
+  }
+
+  function loop(t){
+    const dt = Math.min(0.25, (t - last)/1000); last = t;
+    if (mode === 'live' && analyser) {
+      const ms = meanSquare();
+      pFast += (ms - pFast) * (1 - Math.exp(-dt/0.125));
+      level = 10*Math.log10(Math.max(pFast, 1e-12)) + BASE_CAL + S.cal;
+      const inst = ms * Math.pow(10, (BASE_CAL + S.cal)/10);
+      eSum += inst*dt; eT += dt;
+    } else if (mode === 'demo') {
+      level = demoLevel(t);
+      eSum += Math.pow(10, level/10)*dt; eT += dt;
+    }
+    if (mode === 'live' || mode === 'demo') {
+      lmax = Math.max(lmax, level);
+      if (mode === 'live') checkAlarm(t, level);
+      show(level);
+      if (t - lastPush >= 100) { lastPush = t; hist.push(level); if (hist.length > 600) hist.shift(); drawHist(); }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- history canvas ----------
+  const cv = $('hist'), cx = cv.getContext('2d');
+  let tokens = {};
+  function readTokens(){
+    const cs = getComputedStyle(document.documentElement);
+    ['--ink','--muted','--line','--level','--accent','--alarm'].forEach(k => tokens[k] = cs.getPropertyValue(k).trim());
+  }
+  function drawHist(){
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w*dpr)) { cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+    cx.setTransform(dpr,0,0,dpr,0,0); cx.clearRect(0,0,w,h);
+    const padL = 28, padB = 4, padT = 6, ih = h - padB - padT, iw = w - padL;
+    const y = v => padT + ih - (Math.max(MIN, Math.min(MAX, v)) - MIN)/(MAX-MIN)*ih;
+    cx.font = '11px ' + getComputedStyle(document.body).fontFamily; cx.textBaseline = 'middle';
+    [40,60,80,100].forEach(g => {
+      cx.strokeStyle = tokens['--line']; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(padL, y(g)+.5); cx.lineTo(w, y(g)+.5); cx.stroke();
+      cx.fillStyle = tokens['--muted']; cx.fillText(g, 2, y(g));
+    });
+    const n = mode === 'file' ? hist.length : Math.round(histSpan*10);
+    const data = mode === 'file' ? hist : hist.slice(-n);
+    if (data.length > 1) {
+      const step = iw / Math.max(1, (mode === 'file' ? data.length : n) - 1);
+      const x0 = mode === 'file' ? padL : padL + iw - (data.length-1)*step;
+      cx.beginPath();
+      data.forEach((v,i) => { const X = x0 + i*step, Y = y(v); i ? cx.lineTo(X,Y) : cx.moveTo(X,Y); });
+      cx.lineTo(x0 + (data.length-1)*step, padT+ih); cx.lineTo(x0, padT+ih); cx.closePath();
+      cx.globalAlpha = .16; cx.fillStyle = tokens['--level']; cx.fill(); cx.globalAlpha = 1;
+      cx.beginPath();
+      data.forEach((v,i) => { const X = x0 + i*step, Y = y(v); i ? cx.lineTo(X,Y) : cx.moveTo(X,Y); });
+      cx.strokeStyle = tokens['--level']; cx.lineWidth = 1.6; cx.lineJoin = 'round'; cx.stroke();
+      // over-threshold segments
+      cx.strokeStyle = tokens['--alarm']; cx.lineWidth = 2.2;
+      for (let i=1;i<data.length;i++) if (data[i] >= S.thr && data[i-1] >= S.thr) {
+        cx.beginPath(); cx.moveTo(x0+(i-1)*step, y(data[i-1])); cx.lineTo(x0+i*step, y(data[i])); cx.stroke();
+      }
+      const lx = x0 + (data.length-1)*step, ly = y(data[data.length-1]);
+      cx.fillStyle = tokens['--level']; cx.beginPath(); cx.arc(lx, ly, 3.2, 0, Math.PI*2); cx.fill();
+    }
+    cx.setLineDash([5,4]); cx.strokeStyle = tokens['--accent']; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.moveTo(padL, y(S.thr)); cx.lineTo(w, y(S.thr)); cx.stroke(); cx.setLineDash([]);
+  }
+  readTokens();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readTokens(); drawHist(); });
+  new MutationObserver(() => { readTokens(); drawHist(); }).observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+  window.addEventListener('resize', drawHist);
+
+  // ---------- recording analysis (fallback) ----------
+  $('file').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    $('caption').textContent = 'Werte Aufnahme aus…';
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      const buf = await ctx.decodeAudioData(await f.arrayBuffer());
+      const off = new OfflineAudioContext(1, buf.length, buf.sampleRate);
+      const s = off.createBufferSource(); s.buffer = buf;
+      if (S.aw) { const ch = makeAChain(off); s.connect(ch.input); ch.output.connect(off.destination); }
+      else s.connect(off.destination);
+      s.start(); const out = (await off.startRendering()).getChannelData(0);
+      const sr = buf.sampleRate, blk = Math.round(sr*0.01), k = 1 - Math.exp(-0.01/0.125), off2 = BASE_CAL + S.cal;
+      let p = 0; hist = []; resetStats(); mode = 'file';
+      const segs = []; let over = null, seg = null;
+      for (let b = 0, idx = 0; b + blk <= out.length; b += blk, idx++) {
+        let ms = 0; for (let i=b;i<b+blk;i++) ms += out[i]*out[i]; ms /= blk;
+        p += (ms - p)*k; const L = 10*Math.log10(Math.max(p,1e-12)) + off2, ts = idx*0.01;
+        eSum += ms*Math.pow(10, off2/10)*0.01; eT += 0.01; lmax = Math.max(lmax, L);
+        if (idx % 10 === 0) hist.push(L);
+        if (L >= S.thr) { if (over === null) over = ts; if (!seg && ts - over >= S.hold) seg = { t: over, peak: L }; if (seg) seg.peak = Math.max(seg.peak, L); }
+        else if (L < S.thr - 2) { if (seg) { seg.dur = ts - seg.t; segs.push(seg); } seg = null; over = null; }
+      }
+      if (seg) { seg.dur = out.length/sr - seg.t; segs.push(seg); }
+      const leq = 10*Math.log10(eSum/eT);
+      $('lvl').textContent = leq.toFixed(1); $('fill').style.width = pct(leq) + '%';
+      $('lmax').textContent = fmt(lmax); $('leq').textContent = fmt(leq);
+      alarms = segs.length; $('acount').textContent = alarms;
+      $('log').innerHTML = ''; $('logEmpty').hidden = segs.length > 0;
+      segs.slice(-12).forEach(sg => {
+        const mm = Math.floor(sg.t/60), ss = String(Math.floor(sg.t%60)).padStart(2,'0');
+        addLog(`bei ${mm}:${ss}`, sg.peak, sg.dur);
+      });
+      const d = out.length/sr;
+      $('histspan').textContent = `ganze Aufnahme · ${Math.floor(d/60)}:${String(Math.round(d%60)).padStart(2,'0')}`;
+      $('caption').textContent = `Mittelungspegel der Aufnahme „${f.name}“. ${segs.length} × über ${S.thr} dB.`;
+      setStatus(); drawHist();
+    } catch(err) {
+      $('caption').textContent = 'Diese Datei ließ sich nicht lesen. Versuche eine M4A-, MP3- oder WAV-Aufnahme.';
+    }
+  });
+
+  setStatus();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
